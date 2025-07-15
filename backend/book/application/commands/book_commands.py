@@ -7,6 +7,9 @@ from book.domain.book_entities import Book
 from book.infrastructure.repository.book_repository import BookRepository
 from book.infrastructure.repository.book_search_repository import BookSearchRepository
 from book.application.task.create_book_task import create_book_task
+from book.application.event.book_created_event import book_created_event
+from book.application.event.book_deleted_event import book_deleted_event
+from book.application.event.book_updated_event import book_updated_event
 
 
 class BookCommands(BookCommandInterface, ABC):
@@ -21,6 +24,8 @@ class BookCommands(BookCommandInterface, ABC):
             for k, v in book.__dict__.items()
         }
         create_book_task.send(data)
+        # book_created_event.send(data)
+
         return Book(**data)
 
     def update(self, book_id: int, book: Book) -> Book:
@@ -43,6 +48,7 @@ class BookCommands(BookCommandInterface, ABC):
             "categories": [c.name for c in updated.categories],
             "publication_date": updated.publication_date,
         })
+        # book_updated_event.send(data)
 
         return updated
 
@@ -55,4 +61,5 @@ class BookCommands(BookCommandInterface, ABC):
 
         self.repository.delete(book_id)
         BookSearchRepository.delete_book(book.isbn)
+        # book_deleted_event.send(data)
         self.logger.info(f"[BookCommands] Book ID {book_id} deleted successfully")
