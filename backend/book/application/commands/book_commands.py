@@ -41,7 +41,7 @@ class BookCommands(BookCommandInterface, ABC):
             "synopsis": updated.synopsis,
             "authors": [a.name for a in updated.authors],
             "categories": [c.name for c in updated.categories],
-            "publication_date": updated.publication_date.isoformat(),
+            "publication_date": updated.publication_date,
         })
 
         return updated

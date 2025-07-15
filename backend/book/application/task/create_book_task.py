@@ -28,7 +28,7 @@ def create_book_task(book_data: dict):
             "synopsis": created.synopsis,
             "authors": [a.name for a in created.authors],
             "categories": [c.name for c in created.categories],
-            "publication_date": created.publication_date.isoformat(),
+            "publication_date": created.publication_date,
         })
         logger.info(f"[BookWorker] Book created with ID {created.id}")
 
