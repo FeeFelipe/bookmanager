@@ -1,13 +1,13 @@
-# Library Catalog API
+# Book Manager API
 
 Sistema de gerenciamento de livros, autores, estoques e filiais, estruturado com Django, Django REST Framework e arquitetura limpa.
 
 ## Requisitos
 
 - Python 3.10+
-- pip
-- virtualenv (opcional, mas recomendado)
 - PostgreSQL
+- RabbitMQ
+- Elasticsearch
 
 ## Instalação
 
