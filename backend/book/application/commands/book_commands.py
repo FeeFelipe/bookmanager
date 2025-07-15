@@ -6,7 +6,7 @@ from book.domain.book_command_interface import BookCommandInterface
 from book.domain.book_entities import Book
 from book.infrastructure.repository.book_repository import BookRepository
 from book.infrastructure.repository.book_search_repository import BookSearchRepository
-from book.infrastructure.task.create_book_task import create_book_task
+from book.application.task.create_book_task import create_book_task
 
 
 class BookCommands(BookCommandInterface, ABC):

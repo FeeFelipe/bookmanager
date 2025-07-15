@@ -1,5 +1,5 @@
 import pytest
-from book.infrastructure.task import create_book_task
+from book.application.task import create_book_task
 
 
 @pytest.fixture
@@ -20,8 +20,8 @@ def valid_book_data():
 
 
 def test_create_book_success(mocker, valid_book_data):
-    mock_repo = mocker.patch("book.infrastructure.task.create_book_task.BookRepository")
-    mock_index = mocker.patch("book.infrastructure.task.create_book_task.BookSearchRepository")
+    mock_repo = mocker.patch("book.application.task.create_book_task.BookRepository")
+    mock_index = mocker.patch("book.application.task.create_book_task.BookSearchRepository")
 
     created_book = mocker.Mock()
     created_book.id = 1
@@ -44,9 +44,9 @@ def test_create_book_success(mocker, valid_book_data):
 
 
 def test_create_book_fails_to_create(mocker, valid_book_data):
-    mock_repo = mocker.patch("book.infrastructure.task.create_book_task.BookRepository")
+    mock_repo = mocker.patch("book.application.task.create_book_task.BookRepository")
     mock_repo.return_value.create.return_value = None
-    mock_index = mocker.patch("book.infrastructure.task.create_book_task.BookSearchRepository")
+    mock_index = mocker.patch("book.application.task.create_book_task.BookSearchRepository")
 
     log_spy = mocker.spy(create_book_task.logger, "error")
 
@@ -58,7 +58,7 @@ def test_create_book_fails_to_create(mocker, valid_book_data):
 
 
 def test_create_book_unexpected_exception(mocker, valid_book_data):
-    mock_repo = mocker.patch("book.infrastructure.task.create_book_task.BookRepository")
+    mock_repo = mocker.patch("book.application.task.create_book_task.BookRepository")
     mock_repo.return_value.create.side_effect = Exception("DB error")
 
     log_spy = mocker.spy(create_book_task.logger, "exception")

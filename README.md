@@ -12,10 +12,8 @@ Sistema de gerenciamento de livros, autores, estoques e filiais, estruturado com
 ## Instalação
 
 ```bash
-git clone https://github.com/seuusuario/seuprojeto.git
-cd seuprojeto
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+git clone https://github.com/FeeFelipe/bookmanager.git
+cd bookmanager
 pip install -r requirements.txt
 ```
 
