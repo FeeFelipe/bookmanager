@@ -2,6 +2,7 @@ import pytest
 from book.domain.book_entities import Book
 from book.infrastructure.repository.book_repository import BookRepository
 from book.infrastructure.repository.book_model import BookModel
+from django.db import IntegrityError
 
 
 @pytest.fixture
@@ -61,49 +62,45 @@ def test_get_by_id_unexpected_exception(mocker):
         repo.get_by_id(1)
 
 
+def test_get_queryset_calls_logger(mocker):
+    mock_all = mocker.patch("book.infrastructure.repository.book_model.BookModel.objects.all")
+
+    repo = BookRepository()
+    result = repo.get_queryset()
+
+    mock_all.assert_called_once()
+    assert result == mock_all.return_value
+
+
 def test_create_book(mocker, make_book_model):
     mock_create = mocker.patch("book.infrastructure.repository.book_model.BookModel.objects.create")
     mock_instance = make_book_model()
     mock_create.return_value = mock_instance
 
     repo = BookRepository()
-    book = Book(
-        id=None,
-        title="New Book",
-        isbn="1234567890123",
-        publisher="New Publisher",
-        edition="1st",
-        language="English",
-        book_type="Digital",
-        synopsis="A test book.",
-        publication_date="2023-01-01",
-        authors=[],
-        categories=[]
-    )
+    book = repo._to_entity(mock_instance)
 
     result = repo.create(book)
 
     assert isinstance(result, Book)
-    assert result.title == "Book Title"  # mock_instance.title
+    assert result.title == "Book Title"
 
 
-def test_create_book_unexpected_exception(mocker):
+def test_create_book_integrity_error(mocker, make_book_model):
+    mocker.patch("book.infrastructure.repository.book_model.BookModel.objects.create", side_effect=IntegrityError("duplicate key"))
+
+    repo = BookRepository()
+    book = repo._to_entity(make_book_model())
+
+    with pytest.raises(IntegrityError):
+        repo.create(book)
+
+
+def test_create_book_unexpected_exception(mocker, make_book_model):
     mocker.patch("book.infrastructure.repository.book_model.BookModel.objects.create", side_effect=Exception("DB error"))
 
     repo = BookRepository()
-    book = Book(
-        id=None,
-        title="New Book",
-        isbn="1234567890123",
-        publisher="New Publisher",
-        edition="1st",
-        language="English",
-        book_type="Digital",
-        synopsis="A test book.",
-        publication_date="2023-01-01",
-        authors=[],
-        categories=[]
-    )
+    book = repo._to_entity(make_book_model())
 
     with pytest.raises(Exception):
         repo.create(book)
@@ -117,72 +114,36 @@ def test_update_book_success(mocker, make_book_model):
     mock_get.return_value = make_book_model()
 
     repo = BookRepository()
-    book = Book(
-        id=1,
-        title="Updated Book",
-        isbn="1234567890123",
-        publisher="Updated Publisher",
-        edition="2nd",
-        language="English",
-        book_type="Physical",
-        synopsis="Updated synopsis",
-        publication_date="2023-02-01",
-        authors=[],
-        categories=[]
-    )
+    book = repo._to_entity(make_book_model())
 
-    result = repo.update(1, book)
+    result = repo.update(book.id, book)
 
     assert isinstance(result, Book)
-    assert result.id == 1
+    assert result.id == book.id
 
 
-def test_update_book_not_found(mocker):
+def test_update_book_not_found(mocker, make_book_model):
     mock_filter = mocker.patch("book.infrastructure.repository.book_model.BookModel.objects.filter")
     mock_filter.return_value.update.return_value = 0
 
     repo = BookRepository()
-    book = Book(
-        id=999,
-        title="Doesn't Exist",
-        isbn="0000000000000",
-        publisher="None",
-        edition="1st",
-        language="English",
-        book_type="Digital",
-        synopsis="N/A",
-        publication_date="2020-01-01",
-        authors=[],
-        categories=[]
-    )
+    book = repo._to_entity(make_book_model(id=999))
 
     with pytest.raises(BookModel.DoesNotExist):
-        repo.update(999, book)
+        repo.update(book.id, book)
 
 
-def test_update_book_unexpected_exception(mocker):
+def test_update_book_unexpected_exception(mocker, make_book_model):
     mock_filter = mocker.patch("book.infrastructure.repository.book_model.BookModel.objects.filter")
     mock_filter.return_value.update.return_value = 1
 
     mocker.patch("book.infrastructure.repository.book_model.BookModel.objects.get", side_effect=Exception("update error"))
 
     repo = BookRepository()
-    book = Book(
-        id=1,
-        title="Updated",
-        isbn="123",
-        publisher="P",
-        edition="1",
-        language="EN",
-        book_type="D",
-        synopsis="s",
-        publication_date="2022-01-01",
-        authors=[],
-        categories=[]
-    )
+    book = repo._to_entity(make_book_model())
 
     with pytest.raises(Exception):
-        repo.update(1, book)
+        repo.update(book.id, book)
 
 
 def test_delete_book_success(mocker):

@@ -31,6 +31,7 @@ def make_book():
         }
         data.update(overrides)
         return Book(**data)
+
     return _make_book
 
 
@@ -59,6 +60,22 @@ def test_get_book_error(client, mocker):
 
     assert response.status_code == 500
     assert response.data["detail"] == "Error retrieving book"
+
+
+def test_get_books_with_fuzzy_search(client, mocker, make_book):
+    mock_queryset = mocker.Mock()
+    mock_annotated = mocker.Mock()
+    mock_filtered = [make_book(title="Clean Code")]
+
+    mock_queryset.annotate.return_value = mock_annotated
+    mock_annotated.filter.return_value.order_by.return_value = mock_filtered
+
+    mocker.patch.object(BookQueries, "get_queryset", return_value=mock_queryset)
+
+    response = client.get("/api/book/?search=clean")
+
+    assert response.status_code == 200
+    assert response.data[0]["title"] == "Clean Code"
 
 
 def test_get_all_books(client, mocker, make_book):

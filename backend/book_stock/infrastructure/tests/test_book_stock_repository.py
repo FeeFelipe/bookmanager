@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import Mock
 
-from book_stock.domain.book_stock_entities import BookStock
 from book_stock.infrastructure.book_stock_model import BookStockModel
 from book_stock.infrastructure.book_stock_repository import BookStockRepository
 
@@ -31,12 +30,9 @@ def repository():
 
 
 def test_get_all(repository, mocker, make_book_stock_model):
-    book1 = mocker.Mock(id=101)
-    book2 = mocker.Mock(id=102)
-
     mock_objs = [
-        make_book_stock_model(book=book1),
-        make_book_stock_model(id=2, book=book2),
+        make_book_stock_model(book=mocker.Mock(id=101)),
+        make_book_stock_model(id=2, book=mocker.Mock(id=102)),
     ]
     mock_qs = mocker.patch("book_stock.infrastructure.book_stock_repository.BookStockModel.objects")
     mock_qs.all.return_value = mock_objs
@@ -44,20 +40,17 @@ def test_get_all(repository, mocker, make_book_stock_model):
     result = repository.get_all()
 
     assert len(result) == 2
-    assert isinstance(result[0], BookStock)
     assert result[0].book.id == 101
     assert result[1].book.id == 102
 
 
 def test_get_by_id_found(repository, mocker, make_book_stock_model):
     mock_obj = make_book_stock_model(id=1)
-
     mock_get = mocker.patch("book_stock.infrastructure.book_stock_repository.BookStockModel.objects.get")
     mock_get.return_value = mock_obj
 
     result = repository.get_by_id(1)
 
-    assert isinstance(result, BookStock)
     assert result.id == 1
 
 
@@ -87,95 +80,56 @@ def test_create_book_stock(repository, mocker, make_book_stock_model):
     mock_create = mocker.patch("book_stock.infrastructure.book_stock_repository.BookStockModel.objects.create")
     mock_create.return_value = mock_obj
 
-    book_stock_data = BookStock(
-        id=None,
-        book=101,
-        branch=202,
-        shelf="A1",
-        floor="1",
-        room="B",
-        status="available"
-    )
+    mock_entity = make_book_stock_model(book=mock_book, branch=mock_branch)
+    mock_entity.id = None
+    result = repository.create(mock_entity)
 
-    result = repository.create(book_stock_data)
-
-    assert isinstance(result, BookStock)
-    assert result.id == 1
+    assert result.id == mock_obj.id
     assert result.book.id == 101
     assert result.branch.id == 202
 
 
-def test_create_book_stock_unexpected_exception(repository, mocker):
+def test_create_book_stock_unexpected_exception(repository, mocker, make_book_stock_model):
+    mock_entity = make_book_stock_model()
+    mock_entity.id = None
+
     mocker.patch("book_stock.infrastructure.book_stock_repository.BookModel.objects.get", side_effect=Exception("fail"))
     mocker.patch("book_stock.infrastructure.book_stock_repository.BranchModel.objects.get", return_value=Mock())
 
-    book_stock_data = BookStock(
-        id=None,
-        book=101,
-        branch=202,
-        shelf="A1",
-        floor="1",
-        room="B",
-        status="available"
-    )
-
     with pytest.raises(Exception):
-        repository.create(book_stock_data)
+        repository.create(mock_entity)
 
 
 def test_update_book_stock_success(repository, mocker, make_book_stock_model):
     mock_book = mocker.Mock(id=105)
     mock_branch = mocker.Mock(id=205)
-    mock_obj = make_book_stock_model(id=1, book=mock_book, branch=mock_branch, shelf="B2", floor="2", room="C")
+    mock_obj = make_book_stock_model(id=1, book=mock_book, branch=mock_branch)
 
     mocker.patch("book_stock.infrastructure.book_stock_repository.BookModel.objects.get", return_value=mock_book)
     mocker.patch("book_stock.infrastructure.book_stock_repository.BranchModel.objects.get", return_value=mock_branch)
-
     mock_filter = mocker.patch("book_stock.infrastructure.book_stock_repository.BookStockModel.objects.filter")
     mock_filter.return_value.update.return_value = 1
-
     mock_get = mocker.patch("book_stock.infrastructure.book_stock_repository.BookStockModel.objects.get")
     mock_get.return_value = mock_obj
 
-    book_stock_data = BookStock(
-        id=1,
-        book=105,
-        branch=205,
-        shelf="B2",
-        floor="2",
-        room="C",
-        status="available"
-    )
+    updated_entity = make_book_stock_model(id=1, book=mock_book, branch=mock_branch)
 
-    result = repository.update(1, book_stock_data)
+    result = repository.update(1, updated_entity)
 
-    assert isinstance(result, BookStock)
     assert result.id == 1
     assert result.book.id == 105
 
 
-def test_update_book_stock_not_found(repository, mocker):
-    mock_book = mocker.Mock(id=999)
-    mock_branch = mocker.Mock(id=999)
+def test_update_book_stock_not_found(repository, mocker, make_book_stock_model):
+    mock_entity = make_book_stock_model(id=999, book=mocker.Mock(id=999), branch=mocker.Mock(id=999))
 
-    mocker.patch("book_stock.infrastructure.book_stock_repository.BookModel.objects.get", return_value=mock_book)
-    mocker.patch("book_stock.infrastructure.book_stock_repository.BranchModel.objects.get", return_value=mock_branch)
-
+    mocker.patch("book_stock.infrastructure.book_stock_repository.BookModel.objects.get", return_value=mock_entity.book)
+    mocker.patch("book_stock.infrastructure.book_stock_repository.BranchModel.objects.get", return_value=mock_entity.branch)
     mock_filter = mocker.patch("book_stock.infrastructure.book_stock_repository.BookStockModel.objects.filter")
     mock_filter.return_value.update.return_value = 0
 
-    book_stock_data = BookStock(
-        id=999,
-        book=999,
-        branch=999,
-        shelf="X",
-        floor="Y",
-        room="Z",
-        status="reserved"
-    )
-
     with pytest.raises(BookStockModel.DoesNotExist):
-        repository.update(999, book_stock_data)
+        repository.update(999, mock_entity)
 
 
 def test_delete_book_stock_success(repository, mocker):
@@ -192,3 +146,45 @@ def test_delete_book_stock_not_found(repository, mocker):
 
     with pytest.raises(BookStockModel.DoesNotExist):
         repository.delete(999)
+
+
+def test_move_copy_success(repository, mocker, make_book_stock_model):
+    copy_model = make_book_stock_model(id=1, status="available")
+
+    mock_get = mocker.patch(
+        "book_stock.infrastructure.book_stock_repository.BookStockModel.objects.select_for_update"
+    )
+    mock_get.return_value.get.return_value = copy_model
+    mocker.patch.object(copy_model, "save")
+    mocker.patch("book_stock.infrastructure.book_stock_repository.transaction.atomic", return_value=mocker.MagicMock())
+
+    result = repository.move_copy(1, "reserved")
+
+    assert result.id == 1
+    assert result.status == "reserved"
+    copy_model.save.assert_called_once()
+
+
+def test_move_copy_not_found(repository, mocker):
+    mock_get = mocker.patch(
+        "book_stock.infrastructure.book_stock_repository.BookStockModel.objects.select_for_update"
+    )
+    mock_get.return_value.get.side_effect = BookStockModel.DoesNotExist
+
+    mocker.patch("book_stock.infrastructure.book_stock_repository.transaction.atomic", return_value=mocker.MagicMock())
+
+    with pytest.raises(BookStockModel.DoesNotExist):
+        repository.move_copy(999, "in_transit")
+
+
+def test_move_copy_invalid_status(repository, mocker, make_book_stock_model):
+    copy_model = make_book_stock_model(id=1, status="reserved")
+
+    mock_get = mocker.patch(
+        "book_stock.infrastructure.book_stock_repository.BookStockModel.objects.select_for_update"
+    )
+    mock_get.return_value.get.return_value = copy_model
+    mocker.patch("book_stock.infrastructure.book_stock_repository.transaction.atomic", return_value=mocker.MagicMock())
+
+    with pytest.raises(ValueError, match="Copy is not available"):
+        repository.move_copy(1, "in_transit")

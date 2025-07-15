@@ -17,6 +17,10 @@ class BookRepository(BookCommandInterface, BookQueryInterface):
         books = BookModel.objects.all()
         return [self._to_entity(obj) for obj in books]
 
+    def get_queryset(self):
+        self.logger.info("[BookRepository] get_queryset() called")
+        return BookModel.objects.all()
+
     def get_by_id(self, book_id: int) -> Book:
         self.logger.info(f"[BookRepository] get_by_id({book_id}) called")
         try:

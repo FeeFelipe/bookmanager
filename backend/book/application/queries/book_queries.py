@@ -24,3 +24,6 @@ class BookQueries(BookQueryInterface):
         except BookModel.DoesNotExist:
             self.logger.warning(f"[BookQueries] Book with ID {book_id} not found")
             return None
+
+    def get_queryset(self):
+        return self.repository.get_queryset()
