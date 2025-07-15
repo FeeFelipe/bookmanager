@@ -14,7 +14,7 @@ Sistema de gerenciamento de livros, autores, estoques e filiais, estruturado com
 ```bash
 git clone https://github.com/FeeFelipe/bookmanager.git
 cd bookmanager
-pip install -r requirements.txt
+docker-compose up --build
 ```
 
 ## Configuração
