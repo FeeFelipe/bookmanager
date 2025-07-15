@@ -6,12 +6,12 @@ from book_stock.infrastructure.book_stock_model import BookStockModel
 
 @pytest.fixture
 def mock_repository(mocker):
-    repo = mocker.patch("book_stock.application.queries.book_stock_queries.BookStockRepository", autospec=True)
-    return repo.return_value
+    return mocker.Mock()
 
 
 @pytest.fixture
-def queries(mock_repository):
+def queries(mock_repository, mocker):
+    mocker.patch("book_stock.application.queries.book_stock_queries.BookStockRepository", return_value=mock_repository)
     return BookStockQueries()
 
 
