@@ -1,0 +1,21 @@
+Django==5.2.4
+psycopg2-binary==2.9.10
+python-dotenv>=1.0
+djangorestframework==3.15.1
+djangorestframework-simplejwt==5.3.1
+requests>=2.31.0
+
+# Dramatiq + RabbitMQ
+django-dramatiq>=0.13
+dramatiq[rabbitmq]==1.16.0
+
+
+# Elasticsearch
+elasticsearch==8.13.0
+
+# Testes com pytest
+pytest==8.4.1
+pytest-django==4.11.1
+pytest-mock>=3.12.3
+pytest-cov>=4.2.1
+factory-boy>=3.2.1

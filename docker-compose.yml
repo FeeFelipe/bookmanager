@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: web
+    restart: unless-stopped
+    volumes:
+      - ./backend:/backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - backend/.env
+    environment:
+      - ROLE=web
+    depends_on:
+      - postgres
+      - rabbitmq
+      - elasticsearch
+
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    restart: always
+    env_file:
+      - backend/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    env_file:
+      - backend/.env
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
+
+  book-worker:
+    build:
+      context: .
+    container_name: book-worker
+    restart: on-failure:5
+    volumes:
+      - ./backend:/backend
+    env_file:
+      - backend/.env
+    environment:
+      - ROLE=worker
+    depends_on:
+      - postgres
+      - rabbitmq
+      - web
+      - elasticsearch
+
+volumes:
+  postgres_data:
+  elasticsearch_data:
