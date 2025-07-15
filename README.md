@@ -22,17 +22,6 @@ Copie e edite o arquivo de variáveis de ambiente:
 ```bash
 cp .env.example .env
 ```
-Certifique-se de configurar corretamente o banco de dados e as chaves JWT.
-
-## Migrações e Superusuário
-```bash
-python manage.py migrate
-python manage.py createsuperuser
-```
-## Executando o Projeto
-```bash
-python manage.py runserver
-```
 
 ## Rodando os Testes
 ```bash
@@ -74,16 +63,16 @@ A API usa JWT para autenticação:
 Obter token:
 
 ```bash
-POST /api/token
+POST /api/token/
 {
 "username": "admin",
-"password": "admin"
+"password": "admin123"
 }
 ```
 Atualizar token:
 
 ```bash
-POST /api/token/refresh
+POST /api/token/refresh/
 ```
 
 Inclua o token nos headers:
